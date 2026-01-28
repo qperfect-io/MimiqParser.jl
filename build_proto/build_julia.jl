@@ -3,7 +3,7 @@ using DataStructures
 
 
 dir_queue = Queue{String}()
-push!(dir_queue, "src/proto")
+push!(dir_queue, "src/proto/.")
 
 while !isempty(dir_queue)
 
