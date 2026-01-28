@@ -1,6 +1,7 @@
-name: Test
+name: Build julia code for protobuf
 
 on:
+  push:
   workflow_dispatch:
 
 jobs:
