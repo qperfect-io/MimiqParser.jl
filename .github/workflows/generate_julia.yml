@@ -1,8 +1,9 @@
 name: Build julia code for protobuf
-
 on:
-  push:
   workflow_dispatch:
+        
+permissions:
+  contents: write
 
 jobs:
   build_julia:
@@ -37,6 +38,6 @@ jobs:
             git config --global user.email "github_actions_bot@users.noreply.github.com"
 
             git add -A
-            git commit -m "chore: updates the built files"
+            git commit -m "chore: Auto-generated commit. Update the julia built files"
             git push
             
