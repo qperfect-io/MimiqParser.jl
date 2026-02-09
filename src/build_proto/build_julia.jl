@@ -25,7 +25,7 @@ end
 # generate the path to the Julia proto file from the proto file name
 function _getjuliaprotopath(fname)
     pbfname = replace(fname, r"\.proto$" => "_pb.jl")
-    return joinpath(pwd() * "/src", "julia", pbfname)
+    return joinpath(@__DIR__(), "../julia", pbfname)
 end
 
 
@@ -35,7 +35,7 @@ function _generateproto(path_to_proto, fname)
     print(pbpath)
     if !isfile(pbpath)
         @info "Generating $pbpath from $fname"
-        protojl(fname, joinpath(pwd() * "/src", path_to_proto), joinpath(@__DIR__, "julia"))
+        protojl(fname, joinpath(@__DIR__, "../" * path_to_proto), joinpath(@__DIR__, "julia"))
         _clean_proto_file(fname)
         return true
     end
@@ -46,7 +46,6 @@ function compile_pb_to_julia(original_folder)
     dir_queue = Queue{String}()
     push!(dir_queue, original_folder * "/.")
 
-    println(pwd())
 
     while !isempty(dir_queue)
 

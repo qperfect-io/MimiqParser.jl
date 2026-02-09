@@ -4,11 +4,15 @@ version = "0.1.0"
 authors = ["Maxime-pixel <maxime.outteryck@qperfect.io>"]
 
 [deps]
+Bijections = "e2ed5e7c-b2de-5872-ae92-c73ca462fb04"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 MimiqCircuitsBase = "3a95eabf-73f4-453e-aae8-8a11a27ac032"
 ProtoBuf = "3349acd9-ac6a-5e09-bcdb-63829b23a429"
+Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 
 [compat]
+Bijections = "0.2.2"
 DataStructures = "^0.19.3"
 MimiqCircuitsBase = "^0.20.3"
 ProtoBuf = "^1.2.0"
+Symbolics = "7.11.0"
