@@ -1,0 +1,43 @@
+name: Build julia code for protobuf
+on:
+  workflow_dispatch:
+        
+permissions:
+  contents: write
+
+jobs:
+  build_julia:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        julia-version:
+          - '1' # latest stable
+        julia-arch:
+          - x64
+        os:
+          - ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.julia-version }}
+          arch: ${{ matrix.julia-arch }}
+
+      - name: Qperfect Registry
+        run: |
+          julia -e 'import Pkg; Pkg.update()'
+          julia -e 'import Pkg; Pkg.add("ProtoBuf")'
+          julia -e 'import Pkg; Pkg.add("DataStructures")'
+          julia -e 'include("build_proto/build_julia.jl")'
+
+      - name: Push changes to built files
+        run: |
+            git config --global user.name "github_actions_bot"
+            git config --global user.email "github_actions_bot@users.noreply.github.com"
+
+            git add -A
+            git commit -m "chore: Auto-generated commit. Update the julia built files"
+            git push
+            
