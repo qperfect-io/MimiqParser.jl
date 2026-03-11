@@ -1,4 +1,4 @@
-module ProtoParser
+module MimiqParser
 
 using Symbolics
 using ProtoBuf
@@ -31,4 +31,4 @@ export saveproto
 export loadproto
 include("parser/proto.jl")
 
-end # module ProtoParser
+end # module MimiqParser

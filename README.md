@@ -1,4 +1,4 @@
-# ProtoParser
+# MimiqParser
 
 This Julia module serves two purposes:
 - Being a collection of protobuf Schemas used by QPerfect

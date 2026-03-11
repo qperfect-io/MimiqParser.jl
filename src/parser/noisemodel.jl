@@ -1,5 +1,5 @@
 #
-# Copyright © 2023-2026 QPerfect. All Rights Reserved.
+# Copyright © 2023-2024 QPerfect. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -93,71 +93,77 @@ function fromproto(g::noisemodel_pb.SetQubitReadoutNoise, declcache=nothing)
 end
 
 #############################
-# GateInstanceNoise
+# OperationInstanceNoise
 #############################
 
-function toproto(g::GateInstanceNoise, declcache=nothing)
-    msg = noisemodel_pb.GateInstanceNoise(
-        _to_operation(g.gate, declcache),
+function toproto(g::OperationInstanceNoise, declcache=nothing)
+    msg = noisemodel_pb.OperationInstanceNoise(
+        _to_operation(g.operation, declcache),
         _to_operation(g.noise, declcache),
-        g.before
+        g.before,
+        g.replace
     )
-    return noisemodel_pb.NoiseRule(OneOf(:gate_instance_noise, msg))
+    return noisemodel_pb.NoiseRule(OneOf(:operation_instance_noise, msg))
 end
 
-function fromproto(g::noisemodel_pb.GateInstanceNoise, declcache=nothing)
-    return GateInstanceNoise(
-        fromproto(g.gate, declcache),
+function fromproto(g::noisemodel_pb.OperationInstanceNoise, declcache=nothing)
+    return OperationInstanceNoise(
+        fromproto(g.operation, declcache),
         fromproto(g.noise, declcache);
-        before=g.before
+        before=g.before,
+        replace=g.replace
     )
 end
 
 
 #############################
-# ExactGateInstanceQubitNoise
+# ExactOperationInstanceQubitNoise
 #############################
 
-function toproto(g::ExactGateInstanceQubitNoise, declcache=nothing)
-    msg = noisemodel_pb.ExactGateInstanceQubitNoise(
-        _to_operation(g.gate, declcache),
+function toproto(g::ExactOperationInstanceQubitNoise, declcache=nothing)
+    msg = noisemodel_pb.ExactOperationInstanceQubitNoise(
+        _to_operation(g.operation, declcache),
         UInt32.(g.qubits),
         _to_operation(g.noise, declcache),
-        g.before
+        g.before,
+        g.replace
     )
-    return noisemodel_pb.NoiseRule(OneOf(:exact_gate_instance_noise, msg))
+    return noisemodel_pb.NoiseRule(OneOf(:exact_operation_instance_noise, msg))
 end
 
-function fromproto(g::noisemodel_pb.ExactGateInstanceQubitNoise, declcache=nothing)
-    return ExactGateInstanceQubitNoise(
-        fromproto(g.gate, declcache),
+function fromproto(g::noisemodel_pb.ExactOperationInstanceQubitNoise, declcache=nothing)
+    return ExactOperationInstanceQubitNoise(
+        fromproto(g.operation, declcache),
         Int.(g.qubits),
         fromproto(g.noise, declcache);
-        before=g.before
+        before=g.before,
+        replace=g.replace
     )
 end
 
 
 #############################
-# SetGateInstanceQubitNoise
+# SetOperationInstanceQubitNoise
 #############################
 
-function toproto(g::SetGateInstanceQubitNoise, declcache=nothing)
-    msg = noisemodel_pb.SetGateInstanceQubitNoise(
-        _to_operation(g.gate, declcache),
+function toproto(g::SetOperationInstanceQubitNoise, declcache=nothing)
+    msg = noisemodel_pb.SetOperationInstanceQubitNoise(
+        _to_operation(g.operation, declcache),
         UInt32.(collect(g.qubits)),
         _to_operation(g.noise, declcache),
-        g.before
+        g.before,
+        g.replace
     )
-    return noisemodel_pb.NoiseRule(OneOf(:set_gate_instance_noise, msg))
+    return noisemodel_pb.NoiseRule(OneOf(:set_operation_instance_noise, msg))
 end
 
-function fromproto(g::noisemodel_pb.SetGateInstanceQubitNoise, declcache=nothing)
-    return SetGateInstanceQubitNoise(
-        fromproto(g.gate, declcache),
+function fromproto(g::noisemodel_pb.SetOperationInstanceQubitNoise, declcache=nothing)
+    return SetOperationInstanceQubitNoise(
+        fromproto(g.operation, declcache),
         Set(Int.(g.qubits)),
         fromproto(g.noise, declcache);
-        before=g.before
+        before=g.before,
+        replace=g.replace
     )
 end
 

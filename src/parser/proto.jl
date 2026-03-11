@@ -36,7 +36,8 @@ function loadproto end
 function saveproto end
 
 for (T, PT) in [
-    (Circuit, circuit_pb.Circuit),
+    (AbstractCircuit{Instruction}, circuit_pb.Circuit),
+    (Circuit, circuit_pb.Circuit), # more user-friendly
     (QCSResults, qcsresults_pb.QCSResults),
     (Hamiltonian, hamiltonian_pb.Hamiltonian),
     (OptimizationExperiment, optim_pb.OptimizationExperiment),
@@ -59,13 +60,13 @@ for (T, PT) in [
     end)
 end
 
-function saveproto(fname, c)
+function saveproto(fname::String, c)
     open(fname, "w") do io
         saveproto(io, c)
     end
 end
 
-function loadproto(fname, T::Type)
+function loadproto(fname::String, T::Type)
     open(fname, "r") do io
         loadproto(io, T)
     end

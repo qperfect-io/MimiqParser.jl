@@ -732,7 +732,7 @@ function fromproto(inst::circuit_pb.Instruction, declcache=nothing)
     return Instruction(op, inst.qtargets..., inst.ctargets..., inst.ztargets...)
 end
 
-function toproto(circuit::Circuit)
+function toproto(circuit::AbstractCircuit{Instruction})
     declorder = UInt64[]
     declcache = Dict{UInt64,circuit_pb.Declaration}()
     instructions = map(inst -> toproto(inst, (declcache, declorder)), circuit)

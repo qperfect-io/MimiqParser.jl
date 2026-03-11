@@ -1,4 +1,4 @@
-name = "ProtoParser"
+name = "MimiqParser"
 uuid = "eaa421d0-1ae9-4acc-adc3-5fbe310b118d"
 version = "0.1.0"
 authors = ["Maxime-pixel <maxime.outteryck@qperfect.io>"]
