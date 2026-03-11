@@ -9,9 +9,10 @@ import ProtoBuf as PB
 using ProtoBuf: OneOf
 using ProtoBuf.EnumX: @enumx
 
-export ExactQubitReadoutNoise, GateInstanceNoise, CustomNoiseRule
-export SetGateInstanceQubitNoise, SymbolicPattern, SetQubitReadoutNoise, GlobalReadoutNoise
-export ExactGateInstanceQubitNoise, IdleNoise, SetIdleQubitNoise, NoiseRule, NoiseModel
+export ExactQubitReadoutNoise, CustomNoiseRule, SetOperationInstanceQubitNoise
+export ExactOperationInstanceQubitNoise, SymbolicPattern, OperationInstanceNoise
+export SetQubitReadoutNoise, GlobalReadoutNoise, IdleNoise, SetIdleQubitNoise, NoiseRule
+export NoiseModel
 
 
 struct ExactQubitReadoutNoise
@@ -47,48 +48,6 @@ function PB._encoded_size(x::ExactQubitReadoutNoise)
     encoded_size = 0
     !isempty(x.qubits) && (encoded_size += PB._encoded_size(x.qubits, 1))
     !isnothing(x.noise) && (encoded_size += PB._encoded_size(x.noise, 2))
-    return encoded_size
-end
-
-struct GateInstanceNoise
-    gate::Union{Nothing,circuit_pb.Operation}
-    noise::Union{Nothing,circuit_pb.Operation}
-    before::Bool
-end
-PB.default_values(::Type{GateInstanceNoise}) = (;gate = nothing, noise = nothing, before = false)
-PB.field_numbers(::Type{GateInstanceNoise}) = (;gate = 1, noise = 2, before = 3)
-
-function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:GateInstanceNoise})
-    gate = Ref{Union{Nothing,circuit_pb.Operation}}(nothing)
-    noise = Ref{Union{Nothing,circuit_pb.Operation}}(nothing)
-    before = false
-    while !PB.message_done(d)
-        field_number, wire_type = PB.decode_tag(d)
-        if field_number == 1
-            PB.decode!(d, gate)
-        elseif field_number == 2
-            PB.decode!(d, noise)
-        elseif field_number == 3
-            before = PB.decode(d, Bool)
-        else
-            Base.skip(d, wire_type)
-        end
-    end
-    return GateInstanceNoise(gate[], noise[], before)
-end
-
-function PB.encode(e::PB.AbstractProtoEncoder, x::GateInstanceNoise)
-    initpos = position(e.io)
-    !isnothing(x.gate) && PB.encode(e, 1, x.gate)
-    !isnothing(x.noise) && PB.encode(e, 2, x.noise)
-    x.before != false && PB.encode(e, 3, x.before)
-    return position(e.io) - initpos
-end
-function PB._encoded_size(x::GateInstanceNoise)
-    encoded_size = 0
-    !isnothing(x.gate) && (encoded_size += PB._encoded_size(x.gate, 1))
-    !isnothing(x.noise) && (encoded_size += PB._encoded_size(x.noise, 2))
-    x.before != false && (encoded_size += PB._encoded_size(x.before, 3))
     return encoded_size
 end
 
@@ -146,51 +105,111 @@ function PB._encoded_size(x::CustomNoiseRule)
     return encoded_size
 end
 
-struct SetGateInstanceQubitNoise
-    gate::Union{Nothing,circuit_pb.Operation}
+struct SetOperationInstanceQubitNoise
+    operation::Union{Nothing,circuit_pb.Operation}
     qubits::Vector{UInt32}
     noise::Union{Nothing,circuit_pb.Operation}
     before::Bool
+    replace::Bool
 end
-PB.default_values(::Type{SetGateInstanceQubitNoise}) = (;gate = nothing, qubits = Vector{UInt32}(), noise = nothing, before = false)
-PB.field_numbers(::Type{SetGateInstanceQubitNoise}) = (;gate = 1, qubits = 2, noise = 3, before = 4)
+PB.default_values(::Type{SetOperationInstanceQubitNoise}) = (;operation = nothing, qubits = Vector{UInt32}(), noise = nothing, before = false, replace = false)
+PB.field_numbers(::Type{SetOperationInstanceQubitNoise}) = (;operation = 1, qubits = 2, noise = 3, before = 4, replace = 5)
 
-function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:SetGateInstanceQubitNoise})
-    gate = Ref{Union{Nothing,circuit_pb.Operation}}(nothing)
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:SetOperationInstanceQubitNoise})
+    operation = Ref{Union{Nothing,circuit_pb.Operation}}(nothing)
     qubits = PB.BufferedVector{UInt32}()
     noise = Ref{Union{Nothing,circuit_pb.Operation}}(nothing)
     before = false
+    replace = false
     while !PB.message_done(d)
         field_number, wire_type = PB.decode_tag(d)
         if field_number == 1
-            PB.decode!(d, gate)
+            PB.decode!(d, operation)
         elseif field_number == 2
             PB.decode!(d, wire_type, qubits)
         elseif field_number == 3
             PB.decode!(d, noise)
         elseif field_number == 4
             before = PB.decode(d, Bool)
+        elseif field_number == 5
+            replace = PB.decode(d, Bool)
         else
             Base.skip(d, wire_type)
         end
     end
-    return SetGateInstanceQubitNoise(gate[], qubits[], noise[], before)
+    return SetOperationInstanceQubitNoise(operation[], qubits[], noise[], before, replace)
 end
 
-function PB.encode(e::PB.AbstractProtoEncoder, x::SetGateInstanceQubitNoise)
+function PB.encode(e::PB.AbstractProtoEncoder, x::SetOperationInstanceQubitNoise)
     initpos = position(e.io)
-    !isnothing(x.gate) && PB.encode(e, 1, x.gate)
+    !isnothing(x.operation) && PB.encode(e, 1, x.operation)
     !isempty(x.qubits) && PB.encode(e, 2, x.qubits)
     !isnothing(x.noise) && PB.encode(e, 3, x.noise)
     x.before != false && PB.encode(e, 4, x.before)
+    x.replace != false && PB.encode(e, 5, x.replace)
     return position(e.io) - initpos
 end
-function PB._encoded_size(x::SetGateInstanceQubitNoise)
+function PB._encoded_size(x::SetOperationInstanceQubitNoise)
     encoded_size = 0
-    !isnothing(x.gate) && (encoded_size += PB._encoded_size(x.gate, 1))
+    !isnothing(x.operation) && (encoded_size += PB._encoded_size(x.operation, 1))
     !isempty(x.qubits) && (encoded_size += PB._encoded_size(x.qubits, 2))
     !isnothing(x.noise) && (encoded_size += PB._encoded_size(x.noise, 3))
     x.before != false && (encoded_size += PB._encoded_size(x.before, 4))
+    x.replace != false && (encoded_size += PB._encoded_size(x.replace, 5))
+    return encoded_size
+end
+
+struct ExactOperationInstanceQubitNoise
+    operation::Union{Nothing,circuit_pb.Operation}
+    qubits::Vector{UInt32}
+    noise::Union{Nothing,circuit_pb.Operation}
+    before::Bool
+    replace::Bool
+end
+PB.default_values(::Type{ExactOperationInstanceQubitNoise}) = (;operation = nothing, qubits = Vector{UInt32}(), noise = nothing, before = false, replace = false)
+PB.field_numbers(::Type{ExactOperationInstanceQubitNoise}) = (;operation = 1, qubits = 2, noise = 3, before = 4, replace = 5)
+
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:ExactOperationInstanceQubitNoise})
+    operation = Ref{Union{Nothing,circuit_pb.Operation}}(nothing)
+    qubits = PB.BufferedVector{UInt32}()
+    noise = Ref{Union{Nothing,circuit_pb.Operation}}(nothing)
+    before = false
+    replace = false
+    while !PB.message_done(d)
+        field_number, wire_type = PB.decode_tag(d)
+        if field_number == 1
+            PB.decode!(d, operation)
+        elseif field_number == 2
+            PB.decode!(d, wire_type, qubits)
+        elseif field_number == 3
+            PB.decode!(d, noise)
+        elseif field_number == 4
+            before = PB.decode(d, Bool)
+        elseif field_number == 5
+            replace = PB.decode(d, Bool)
+        else
+            Base.skip(d, wire_type)
+        end
+    end
+    return ExactOperationInstanceQubitNoise(operation[], qubits[], noise[], before, replace)
+end
+
+function PB.encode(e::PB.AbstractProtoEncoder, x::ExactOperationInstanceQubitNoise)
+    initpos = position(e.io)
+    !isnothing(x.operation) && PB.encode(e, 1, x.operation)
+    !isempty(x.qubits) && PB.encode(e, 2, x.qubits)
+    !isnothing(x.noise) && PB.encode(e, 3, x.noise)
+    x.before != false && PB.encode(e, 4, x.before)
+    x.replace != false && PB.encode(e, 5, x.replace)
+    return position(e.io) - initpos
+end
+function PB._encoded_size(x::ExactOperationInstanceQubitNoise)
+    encoded_size = 0
+    !isnothing(x.operation) && (encoded_size += PB._encoded_size(x.operation, 1))
+    !isempty(x.qubits) && (encoded_size += PB._encoded_size(x.qubits, 2))
+    !isnothing(x.noise) && (encoded_size += PB._encoded_size(x.noise, 3))
+    x.before != false && (encoded_size += PB._encoded_size(x.before, 4))
+    x.replace != false && (encoded_size += PB._encoded_size(x.replace, 5))
     return encoded_size
 end
 
@@ -227,6 +246,54 @@ function PB._encoded_size(x::SymbolicPattern)
     encoded_size = 0
     !isempty(x.variables) && (encoded_size += PB._encoded_size(x.variables, 1))
     !isnothing(x.operation) && (encoded_size += PB._encoded_size(x.operation, 2))
+    return encoded_size
+end
+
+struct OperationInstanceNoise
+    operation::Union{Nothing,circuit_pb.Operation}
+    noise::Union{Nothing,circuit_pb.Operation}
+    before::Bool
+    replace::Bool
+end
+PB.default_values(::Type{OperationInstanceNoise}) = (;operation = nothing, noise = nothing, before = false, replace = false)
+PB.field_numbers(::Type{OperationInstanceNoise}) = (;operation = 1, noise = 2, before = 3, replace = 4)
+
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:OperationInstanceNoise})
+    operation = Ref{Union{Nothing,circuit_pb.Operation}}(nothing)
+    noise = Ref{Union{Nothing,circuit_pb.Operation}}(nothing)
+    before = false
+    replace = false
+    while !PB.message_done(d)
+        field_number, wire_type = PB.decode_tag(d)
+        if field_number == 1
+            PB.decode!(d, operation)
+        elseif field_number == 2
+            PB.decode!(d, noise)
+        elseif field_number == 3
+            before = PB.decode(d, Bool)
+        elseif field_number == 4
+            replace = PB.decode(d, Bool)
+        else
+            Base.skip(d, wire_type)
+        end
+    end
+    return OperationInstanceNoise(operation[], noise[], before, replace)
+end
+
+function PB.encode(e::PB.AbstractProtoEncoder, x::OperationInstanceNoise)
+    initpos = position(e.io)
+    !isnothing(x.operation) && PB.encode(e, 1, x.operation)
+    !isnothing(x.noise) && PB.encode(e, 2, x.noise)
+    x.before != false && PB.encode(e, 3, x.before)
+    x.replace != false && PB.encode(e, 4, x.replace)
+    return position(e.io) - initpos
+end
+function PB._encoded_size(x::OperationInstanceNoise)
+    encoded_size = 0
+    !isnothing(x.operation) && (encoded_size += PB._encoded_size(x.operation, 1))
+    !isnothing(x.noise) && (encoded_size += PB._encoded_size(x.noise, 2))
+    x.before != false && (encoded_size += PB._encoded_size(x.before, 3))
+    x.replace != false && (encoded_size += PB._encoded_size(x.replace, 4))
     return encoded_size
 end
 
@@ -293,54 +360,6 @@ end
 function PB._encoded_size(x::GlobalReadoutNoise)
     encoded_size = 0
     !isnothing(x.noise) && (encoded_size += PB._encoded_size(x.noise, 1))
-    return encoded_size
-end
-
-struct ExactGateInstanceQubitNoise
-    gate::Union{Nothing,circuit_pb.Operation}
-    qubits::Vector{UInt32}
-    noise::Union{Nothing,circuit_pb.Operation}
-    before::Bool
-end
-PB.default_values(::Type{ExactGateInstanceQubitNoise}) = (;gate = nothing, qubits = Vector{UInt32}(), noise = nothing, before = false)
-PB.field_numbers(::Type{ExactGateInstanceQubitNoise}) = (;gate = 1, qubits = 2, noise = 3, before = 4)
-
-function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:ExactGateInstanceQubitNoise})
-    gate = Ref{Union{Nothing,circuit_pb.Operation}}(nothing)
-    qubits = PB.BufferedVector{UInt32}()
-    noise = Ref{Union{Nothing,circuit_pb.Operation}}(nothing)
-    before = false
-    while !PB.message_done(d)
-        field_number, wire_type = PB.decode_tag(d)
-        if field_number == 1
-            PB.decode!(d, gate)
-        elseif field_number == 2
-            PB.decode!(d, wire_type, qubits)
-        elseif field_number == 3
-            PB.decode!(d, noise)
-        elseif field_number == 4
-            before = PB.decode(d, Bool)
-        else
-            Base.skip(d, wire_type)
-        end
-    end
-    return ExactGateInstanceQubitNoise(gate[], qubits[], noise[], before)
-end
-
-function PB.encode(e::PB.AbstractProtoEncoder, x::ExactGateInstanceQubitNoise)
-    initpos = position(e.io)
-    !isnothing(x.gate) && PB.encode(e, 1, x.gate)
-    !isempty(x.qubits) && PB.encode(e, 2, x.qubits)
-    !isnothing(x.noise) && PB.encode(e, 3, x.noise)
-    x.before != false && PB.encode(e, 4, x.before)
-    return position(e.io) - initpos
-end
-function PB._encoded_size(x::ExactGateInstanceQubitNoise)
-    encoded_size = 0
-    !isnothing(x.gate) && (encoded_size += PB._encoded_size(x.gate, 1))
-    !isempty(x.qubits) && (encoded_size += PB._encoded_size(x.qubits, 2))
-    !isnothing(x.noise) && (encoded_size += PB._encoded_size(x.noise, 3))
-    x.before != false && (encoded_size += PB._encoded_size(x.before, 4))
     return encoded_size
 end
 
@@ -411,13 +430,13 @@ function PB._encoded_size(x::SetIdleQubitNoise)
 end
 
 struct NoiseRule
-    kind::Union{Nothing,OneOf{<:Union{GlobalReadoutNoise,ExactQubitReadoutNoise,SetQubitReadoutNoise,GateInstanceNoise,ExactGateInstanceQubitNoise,SetGateInstanceQubitNoise,IdleNoise,CustomNoiseRule,SetIdleQubitNoise}}}
+    kind::Union{Nothing,OneOf{<:Union{GlobalReadoutNoise,ExactQubitReadoutNoise,SetQubitReadoutNoise,OperationInstanceNoise,ExactOperationInstanceQubitNoise,SetOperationInstanceQubitNoise,IdleNoise,CustomNoiseRule,SetIdleQubitNoise}}}
 end
 PB.oneof_field_types(::Type{NoiseRule}) = (;
-    kind = (;global_readout=GlobalReadoutNoise, exact_qubit_readout=ExactQubitReadoutNoise, set_qubit_readout=SetQubitReadoutNoise, gate_instance_noise=GateInstanceNoise, exact_gate_instance_noise=ExactGateInstanceQubitNoise, set_gate_instance_noise=SetGateInstanceQubitNoise, idle_noise=IdleNoise, custom_noise=CustomNoiseRule, set_idle_noise=SetIdleQubitNoise),
+    kind = (;global_readout=GlobalReadoutNoise, exact_qubit_readout=ExactQubitReadoutNoise, set_qubit_readout=SetQubitReadoutNoise, operation_instance_noise=OperationInstanceNoise, exact_operation_instance_noise=ExactOperationInstanceQubitNoise, set_operation_instance_noise=SetOperationInstanceQubitNoise, idle_noise=IdleNoise, custom_noise=CustomNoiseRule, set_idle_noise=SetIdleQubitNoise),
 )
-PB.default_values(::Type{NoiseRule}) = (;global_readout = nothing, exact_qubit_readout = nothing, set_qubit_readout = nothing, gate_instance_noise = nothing, exact_gate_instance_noise = nothing, set_gate_instance_noise = nothing, idle_noise = nothing, custom_noise = nothing, set_idle_noise = nothing)
-PB.field_numbers(::Type{NoiseRule}) = (;global_readout = 1, exact_qubit_readout = 2, set_qubit_readout = 3, gate_instance_noise = 4, exact_gate_instance_noise = 5, set_gate_instance_noise = 6, idle_noise = 7, custom_noise = 8, set_idle_noise = 9)
+PB.default_values(::Type{NoiseRule}) = (;global_readout = nothing, exact_qubit_readout = nothing, set_qubit_readout = nothing, operation_instance_noise = nothing, exact_operation_instance_noise = nothing, set_operation_instance_noise = nothing, idle_noise = nothing, custom_noise = nothing, set_idle_noise = nothing)
+PB.field_numbers(::Type{NoiseRule}) = (;global_readout = 1, exact_qubit_readout = 2, set_qubit_readout = 3, operation_instance_noise = 4, exact_operation_instance_noise = 5, set_operation_instance_noise = 6, idle_noise = 7, custom_noise = 8, set_idle_noise = 9)
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:NoiseRule})
     kind = nothing
@@ -430,11 +449,11 @@ function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:NoiseRule})
         elseif field_number == 3
             kind = OneOf(:set_qubit_readout, PB.decode(d, Ref{SetQubitReadoutNoise}))
         elseif field_number == 4
-            kind = OneOf(:gate_instance_noise, PB.decode(d, Ref{GateInstanceNoise}))
+            kind = OneOf(:operation_instance_noise, PB.decode(d, Ref{OperationInstanceNoise}))
         elseif field_number == 5
-            kind = OneOf(:exact_gate_instance_noise, PB.decode(d, Ref{ExactGateInstanceQubitNoise}))
+            kind = OneOf(:exact_operation_instance_noise, PB.decode(d, Ref{ExactOperationInstanceQubitNoise}))
         elseif field_number == 6
-            kind = OneOf(:set_gate_instance_noise, PB.decode(d, Ref{SetGateInstanceQubitNoise}))
+            kind = OneOf(:set_operation_instance_noise, PB.decode(d, Ref{SetOperationInstanceQubitNoise}))
         elseif field_number == 7
             kind = OneOf(:idle_noise, PB.decode(d, Ref{IdleNoise}))
         elseif field_number == 8
@@ -457,12 +476,12 @@ function PB.encode(e::PB.AbstractProtoEncoder, x::NoiseRule)
         PB.encode(e, 2, x.kind[]::ExactQubitReadoutNoise)
     elseif x.kind.name === :set_qubit_readout
         PB.encode(e, 3, x.kind[]::SetQubitReadoutNoise)
-    elseif x.kind.name === :gate_instance_noise
-        PB.encode(e, 4, x.kind[]::GateInstanceNoise)
-    elseif x.kind.name === :exact_gate_instance_noise
-        PB.encode(e, 5, x.kind[]::ExactGateInstanceQubitNoise)
-    elseif x.kind.name === :set_gate_instance_noise
-        PB.encode(e, 6, x.kind[]::SetGateInstanceQubitNoise)
+    elseif x.kind.name === :operation_instance_noise
+        PB.encode(e, 4, x.kind[]::OperationInstanceNoise)
+    elseif x.kind.name === :exact_operation_instance_noise
+        PB.encode(e, 5, x.kind[]::ExactOperationInstanceQubitNoise)
+    elseif x.kind.name === :set_operation_instance_noise
+        PB.encode(e, 6, x.kind[]::SetOperationInstanceQubitNoise)
     elseif x.kind.name === :idle_noise
         PB.encode(e, 7, x.kind[]::IdleNoise)
     elseif x.kind.name === :custom_noise
@@ -481,12 +500,12 @@ function PB._encoded_size(x::NoiseRule)
         encoded_size += PB._encoded_size(x.kind[]::ExactQubitReadoutNoise, 2)
     elseif x.kind.name === :set_qubit_readout
         encoded_size += PB._encoded_size(x.kind[]::SetQubitReadoutNoise, 3)
-    elseif x.kind.name === :gate_instance_noise
-        encoded_size += PB._encoded_size(x.kind[]::GateInstanceNoise, 4)
-    elseif x.kind.name === :exact_gate_instance_noise
-        encoded_size += PB._encoded_size(x.kind[]::ExactGateInstanceQubitNoise, 5)
-    elseif x.kind.name === :set_gate_instance_noise
-        encoded_size += PB._encoded_size(x.kind[]::SetGateInstanceQubitNoise, 6)
+    elseif x.kind.name === :operation_instance_noise
+        encoded_size += PB._encoded_size(x.kind[]::OperationInstanceNoise, 4)
+    elseif x.kind.name === :exact_operation_instance_noise
+        encoded_size += PB._encoded_size(x.kind[]::ExactOperationInstanceQubitNoise, 5)
+    elseif x.kind.name === :set_operation_instance_noise
+        encoded_size += PB._encoded_size(x.kind[]::SetOperationInstanceQubitNoise, 6)
     elseif x.kind.name === :idle_noise
         encoded_size += PB._encoded_size(x.kind[]::IdleNoise, 7)
     elseif x.kind.name === :custom_noise
