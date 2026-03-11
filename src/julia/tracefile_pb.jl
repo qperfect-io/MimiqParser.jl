@@ -4,7 +4,7 @@
 module tracefile_pb
 
 
-import ..mpocircuit_pb
+import ..mpssim_pb
 
 import ..circuit_pb
 import ProtoBuf as PB
@@ -16,7 +16,7 @@ export Tracefile
 
 struct Tracefile
     mimiq_circuit::Union{Nothing,circuit_pb.Circuit}
-    mpo_circuit::Union{Nothing,mpocircuit_pb.MpoCircuit}
+    mpo_circuit::Union{Nothing,mpssim_pb.MpoCircuit}
     inst_to_mpo::Dict{Int64,Int64}
     mpo_to_inst::Dict{Int64,Int64}
 end
@@ -25,7 +25,7 @@ PB.field_numbers(::Type{Tracefile}) = (;mimiq_circuit = 1, mpo_circuit = 2, inst
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Tracefile})
     mimiq_circuit = Ref{Union{Nothing,circuit_pb.Circuit}}(nothing)
-    mpo_circuit = Ref{Union{Nothing,mpocircuit_pb.MpoCircuit}}(nothing)
+    mpo_circuit = Ref{Union{Nothing,mpssim_pb.MpoCircuit}}(nothing)
     inst_to_mpo = Dict{Int64,Int64}()
     mpo_to_inst = Dict{Int64,Int64}()
     while !PB.message_done(d)

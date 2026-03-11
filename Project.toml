@@ -13,6 +13,6 @@ Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 [compat]
 Bijections = "0.2.2"
 DataStructures = "^0.19.3"
-MimiqCircuitsBase = "^0.20.3"
+MimiqCircuitsBase = "^0.21"
 ProtoBuf = "^1.2.0"
 Symbolics = "7.11.0"

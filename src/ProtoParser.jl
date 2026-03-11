@@ -24,7 +24,7 @@ include("parser/optim.jl")
 include("parser/noisemodel.jl")
 
 # Some schemas are also prebuilt and unused by this module
-include("julia/mpocircuit_pb.jl")
+include("julia/mpssim_pb.jl")
 include("julia/tracefile_pb.jl")
 
 export saveproto
