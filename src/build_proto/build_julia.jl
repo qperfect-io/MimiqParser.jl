@@ -17,59 +17,47 @@ function _clean_proto_file(fname)
         end
     end
 
-    open(pbpath, "w") do io
-        join(io, lines, "\n")
-    end
+    write(pbpath, join(lines, "\n"))
 end
 
 # generate the path to the Julia proto file from the proto file name
 function _getjuliaprotopath(fname)
     pbfname = replace(fname, r"\.proto$" => "_pb.jl")
-    return joinpath(@__DIR__(), "../julia", pbfname)
+    return joinpath(@__DIR__, "../julia", pbfname)
 end
 
+function path_from_folder(path, folder)
+    parts = splitpath(path)
+    i = findfirst(==(folder), parts)
+    i === nothing && error("Folder not found in absolute path")
+    return joinpath(parts[i+1:end]...)
+end
 
 # generate the proto files, if they don't exist
-function _generateproto(path_to_proto, fname)
+function _generateproto(root, path_to_proto, fname)
     pbpath = _getjuliaprotopath(fname)
-    print(pbpath)
     if !isfile(pbpath)
-        @info "Generating $pbpath from $fname"
-        protojl(fname, joinpath(@__DIR__, "../" * path_to_proto), joinpath(@__DIR__, "julia"))
-        _clean_proto_file(fname)
-        return true
+        relative_path = path_from_folder(path_to_proto, root)
+        file = joinpath(relative_path, fname)
+        @info "Generating $pbpath from $file"
+        protojl(file, root, joinpath(@__DIR__, "../julia"))
     end
-    return false
 end
 
 function compile_pb_to_julia(original_folder)
-    dir_queue = Queue{String}()
-    push!(dir_queue, original_folder * "/.")
 
-
-    while !isempty(dir_queue)
-
-        curr_root = popfirst!(dir_queue)
-        for (root, dirs, files) in walkdir(curr_root)
-
-            println(root)
-            julia_root = replace(root, "/proto/" => "/julia/"; count=1)
-
-            for dir in dirs
-                new_pb_path = joinpath.(root, dir)
-                push!(dir_queue, new_pb_path)
-
-                new_julia_path = joinpath.(julia_root, dir)
-                mkpath(new_julia_path)
-            end
-
-            for file in files
-                generated = _generateproto(curr_root, file)
-                if generated
-                    _clean_proto_file(file)
-                end
+    mkpath(joinpath(@__DIR__, "../julia"))
+    files_to_clean = []
+    for (root, _, files) in walkdir(joinpath(@__DIR__, "../../" * original_folder))
+        for file in files
+            if length(file) > 5 && file[end-5:end] == ".proto"
+                _generateproto(original_folder, root, file)
+                push!(files_to_clean, file)
             end
         end
+    end
+    for file in files_to_clean
+        _clean_proto_file(file)
     end
 
 end

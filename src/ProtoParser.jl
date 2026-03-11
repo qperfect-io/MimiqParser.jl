@@ -5,12 +5,8 @@ using ProtoBuf
 using Bijections: Bijection
 using MimiqCircuitsBase
 
-include("build_proto/build_julia.jl")
-println("PATH BELOW")
-println(@__DIR__)
-println(joinpath(@__DIR__, "proto/mimiqcircuits"))
-println("--------------------")
-compile_pb_to_julia(joinpath(@__DIR__, "proto/mimiqcircuits"))
+# The generated files should be built manually before compiling
+# When doing a merge request the files will be automatically regenerated using src/compile_pb_to_julia.jl before being tested
 include("julia/bitvector_pb.jl")
 include("julia/pauli_pb.jl")
 include("julia/hamiltonian_pb.jl")
@@ -26,6 +22,10 @@ include("parser/circuit.jl")
 include("parser/qcsresults.jl")
 include("parser/optim.jl")
 include("parser/noisemodel.jl")
+
+# Some schemas are also prebuilt and unused by this module
+include("julia/mpocircuit_pb.jl")
+include("julia/tracefile_pb.jl")
 
 export saveproto
 export loadproto

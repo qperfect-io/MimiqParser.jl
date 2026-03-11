@@ -1,6 +1,0 @@
-syntax = "proto3";
-
-message PauliString {
-    int64 numqubits = 1;
-    string pauli =  2;
-}
