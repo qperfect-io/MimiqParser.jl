@@ -52,49 +52,49 @@ end
 
 struct Tracefile
     mimiq_circuit::Union{Nothing,circuit_pb.Circuit}
-    mpo_circuit::Union{Nothing,mpssim_pb.MpoCircuit}
+    converted_circuit::Union{Nothing,mpssim_pb.MpoCircuit}
     inst_to_mpo::Vector{Pair}
-    state::Vector{mpssim_pb.MPSState}
+    state_evolution::Vector{mpssim_pb.MPSState}
 end
-PB.default_values(::Type{Tracefile}) = (;mimiq_circuit = nothing, mpo_circuit = nothing, inst_to_mpo = Vector{Pair}(), state = Vector{mpssim_pb.MPSState}())
-PB.field_numbers(::Type{Tracefile}) = (;mimiq_circuit = 1, mpo_circuit = 2, inst_to_mpo = 3, state = 4)
+PB.default_values(::Type{Tracefile}) = (;mimiq_circuit = nothing, converted_circuit = nothing, inst_to_mpo = Vector{Pair}(), state_evolution = Vector{mpssim_pb.MPSState}())
+PB.field_numbers(::Type{Tracefile}) = (;mimiq_circuit = 1, converted_circuit = 2, inst_to_mpo = 3, state_evolution = 4)
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Tracefile})
     mimiq_circuit = Ref{Union{Nothing,circuit_pb.Circuit}}(nothing)
-    mpo_circuit = Ref{Union{Nothing,mpssim_pb.MpoCircuit}}(nothing)
+    converted_circuit = Ref{Union{Nothing,mpssim_pb.MpoCircuit}}(nothing)
     inst_to_mpo = PB.BufferedVector{Pair}()
-    state = PB.BufferedVector{mpssim_pb.MPSState}()
+    state_evolution = PB.BufferedVector{mpssim_pb.MPSState}()
     while !PB.message_done(d)
         field_number, wire_type = PB.decode_tag(d)
         if field_number == 1
             PB.decode!(d, mimiq_circuit)
         elseif field_number == 2
-            PB.decode!(d, mpo_circuit)
+            PB.decode!(d, converted_circuit)
         elseif field_number == 3
             PB.decode!(d, inst_to_mpo)
         elseif field_number == 4
-            PB.decode!(d, state)
+            PB.decode!(d, state_evolution)
         else
             Base.skip(d, wire_type)
         end
     end
-    return Tracefile(mimiq_circuit[], mpo_circuit[], inst_to_mpo[], state[])
+    return Tracefile(mimiq_circuit[], converted_circuit[], inst_to_mpo[], state_evolution[])
 end
 
 function PB.encode(e::PB.AbstractProtoEncoder, x::Tracefile)
     initpos = position(e.io)
     !isnothing(x.mimiq_circuit) && PB.encode(e, 1, x.mimiq_circuit)
-    !isnothing(x.mpo_circuit) && PB.encode(e, 2, x.mpo_circuit)
+    !isnothing(x.converted_circuit) && PB.encode(e, 2, x.converted_circuit)
     !isempty(x.inst_to_mpo) && PB.encode(e, 3, x.inst_to_mpo)
-    !isempty(x.state) && PB.encode(e, 4, x.state)
+    !isempty(x.state_evolution) && PB.encode(e, 4, x.state_evolution)
     return position(e.io) - initpos
 end
 function PB._encoded_size(x::Tracefile)
     encoded_size = 0
     !isnothing(x.mimiq_circuit) && (encoded_size += PB._encoded_size(x.mimiq_circuit, 1))
-    !isnothing(x.mpo_circuit) && (encoded_size += PB._encoded_size(x.mpo_circuit, 2))
+    !isnothing(x.converted_circuit) && (encoded_size += PB._encoded_size(x.converted_circuit, 2))
     !isempty(x.inst_to_mpo) && (encoded_size += PB._encoded_size(x.inst_to_mpo, 3))
-    !isempty(x.state) && (encoded_size += PB._encoded_size(x.state, 4))
+    !isempty(x.state_evolution) && (encoded_size += PB._encoded_size(x.state_evolution, 4))
     return encoded_size
 end
 end # module
