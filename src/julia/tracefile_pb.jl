@@ -11,23 +11,59 @@ import ProtoBuf as PB
 using ProtoBuf: OneOf
 using ProtoBuf.EnumX: @enumx
 
-export Tracefile
+export Pair, Tracefile
 
+
+struct Pair
+    first::Int64
+    second::Int64
+end
+PB.default_values(::Type{Pair}) = (;first = zero(Int64), second = zero(Int64))
+PB.field_numbers(::Type{Pair}) = (;first = 1, second = 2)
+
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Pair})
+    first = zero(Int64)
+    second = zero(Int64)
+    while !PB.message_done(d)
+        field_number, wire_type = PB.decode_tag(d)
+        if field_number == 1
+            first = PB.decode(d, Int64)
+        elseif field_number == 2
+            second = PB.decode(d, Int64)
+        else
+            Base.skip(d, wire_type)
+        end
+    end
+    return Pair(first, second)
+end
+
+function PB.encode(e::PB.AbstractProtoEncoder, x::Pair)
+    initpos = position(e.io)
+    x.first != zero(Int64) && PB.encode(e, 1, x.first)
+    x.second != zero(Int64) && PB.encode(e, 2, x.second)
+    return position(e.io) - initpos
+end
+function PB._encoded_size(x::Pair)
+    encoded_size = 0
+    x.first != zero(Int64) && (encoded_size += PB._encoded_size(x.first, 1))
+    x.second != zero(Int64) && (encoded_size += PB._encoded_size(x.second, 2))
+    return encoded_size
+end
 
 struct Tracefile
     mimiq_circuit::Union{Nothing,circuit_pb.Circuit}
     mpo_circuit::Union{Nothing,mpssim_pb.MpoCircuit}
-    inst_to_mpo::Dict{Int64,Int64}
-    mpo_to_inst::Dict{Int64,Int64}
+    inst_to_mpo::Vector{Pair}
+    state::Vector{mpssim_pb.MPSState}
 end
-PB.default_values(::Type{Tracefile}) = (;mimiq_circuit = nothing, mpo_circuit = nothing, inst_to_mpo = Dict{Int64,Int64}(), mpo_to_inst = Dict{Int64,Int64}())
-PB.field_numbers(::Type{Tracefile}) = (;mimiq_circuit = 1, mpo_circuit = 2, inst_to_mpo = 3, mpo_to_inst = 4)
+PB.default_values(::Type{Tracefile}) = (;mimiq_circuit = nothing, mpo_circuit = nothing, inst_to_mpo = Vector{Pair}(), state = Vector{mpssim_pb.MPSState}())
+PB.field_numbers(::Type{Tracefile}) = (;mimiq_circuit = 1, mpo_circuit = 2, inst_to_mpo = 3, state = 4)
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Tracefile})
     mimiq_circuit = Ref{Union{Nothing,circuit_pb.Circuit}}(nothing)
     mpo_circuit = Ref{Union{Nothing,mpssim_pb.MpoCircuit}}(nothing)
-    inst_to_mpo = Dict{Int64,Int64}()
-    mpo_to_inst = Dict{Int64,Int64}()
+    inst_to_mpo = PB.BufferedVector{Pair}()
+    state = PB.BufferedVector{mpssim_pb.MPSState}()
     while !PB.message_done(d)
         field_number, wire_type = PB.decode_tag(d)
         if field_number == 1
@@ -37,12 +73,12 @@ function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Tracefile})
         elseif field_number == 3
             PB.decode!(d, inst_to_mpo)
         elseif field_number == 4
-            PB.decode!(d, mpo_to_inst)
+            PB.decode!(d, state)
         else
             Base.skip(d, wire_type)
         end
     end
-    return Tracefile(mimiq_circuit[], mpo_circuit[], inst_to_mpo, mpo_to_inst)
+    return Tracefile(mimiq_circuit[], mpo_circuit[], inst_to_mpo[], state[])
 end
 
 function PB.encode(e::PB.AbstractProtoEncoder, x::Tracefile)
@@ -50,7 +86,7 @@ function PB.encode(e::PB.AbstractProtoEncoder, x::Tracefile)
     !isnothing(x.mimiq_circuit) && PB.encode(e, 1, x.mimiq_circuit)
     !isnothing(x.mpo_circuit) && PB.encode(e, 2, x.mpo_circuit)
     !isempty(x.inst_to_mpo) && PB.encode(e, 3, x.inst_to_mpo)
-    !isempty(x.mpo_to_inst) && PB.encode(e, 4, x.mpo_to_inst)
+    !isempty(x.state) && PB.encode(e, 4, x.state)
     return position(e.io) - initpos
 end
 function PB._encoded_size(x::Tracefile)
@@ -58,7 +94,7 @@ function PB._encoded_size(x::Tracefile)
     !isnothing(x.mimiq_circuit) && (encoded_size += PB._encoded_size(x.mimiq_circuit, 1))
     !isnothing(x.mpo_circuit) && (encoded_size += PB._encoded_size(x.mpo_circuit, 2))
     !isempty(x.inst_to_mpo) && (encoded_size += PB._encoded_size(x.inst_to_mpo, 3))
-    !isempty(x.mpo_to_inst) && (encoded_size += PB._encoded_size(x.mpo_to_inst, 4))
+    !isempty(x.state) && (encoded_size += PB._encoded_size(x.state, 4))
     return encoded_size
 end
 end # module
