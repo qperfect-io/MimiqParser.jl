@@ -25,7 +25,7 @@ include("parser/noisemodel.jl")
 
 # Some schemas are also prebuilt and unused by this module
 include("julia/mpssim_pb.jl")
-include("julia/tracefile_pb.jl")
+include("julia/mpstrace_pb.jl")
 
 export saveproto
 export loadproto
