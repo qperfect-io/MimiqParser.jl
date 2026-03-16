@@ -43,7 +43,8 @@ for (T, PT) in [
     (OptimizationExperiment, optim_pb.OptimizationExperiment),
     (OptimizationRun, optim_pb.OptimizationRun),
     (OptimizationResults, optim_pb.OptimizationResults),
-    (NoiseModel, noisemodel_pb.NoiseModel)
+    (NoiseModel, noisemodel_pb.NoiseModel),
+    (Tracefile, tracefile_pb.Tracefile)
 ]
     eval(quote
         function saveproto(io::IO, c::$T)

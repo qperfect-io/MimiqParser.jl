@@ -7,8 +7,69 @@ import ProtoBuf as PB
 using ProtoBuf: OneOf
 using ProtoBuf.EnumX: @enumx
 
-export FlatTensor, ClassicalState, ComplexState, MpoNorm, MPS, MPO, MPSState, MpoCircuit
+export MPSLight, FlatTensor, ClassicalState, ComplexState, MpoNorm, MPS, MPO, MPOLight
+export MPSState, MpoCircuit
 
+
+struct MPSLight
+    num_tensors::Int64
+    num_qubits::Int64
+    physical_dims::Vector{Int64}
+    max_bond_dim::Int64
+    bond_dims::Vector{Int64}
+    ortho_center::Int64
+end
+PB.default_values(::Type{MPSLight}) = (;num_tensors = zero(Int64), num_qubits = zero(Int64), physical_dims = Vector{Int64}(), max_bond_dim = zero(Int64), bond_dims = Vector{Int64}(), ortho_center = zero(Int64))
+PB.field_numbers(::Type{MPSLight}) = (;num_tensors = 1, num_qubits = 2, physical_dims = 3, max_bond_dim = 4, bond_dims = 5, ortho_center = 7)
+
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:MPSLight})
+    num_tensors = zero(Int64)
+    num_qubits = zero(Int64)
+    physical_dims = PB.BufferedVector{Int64}()
+    max_bond_dim = zero(Int64)
+    bond_dims = PB.BufferedVector{Int64}()
+    ortho_center = zero(Int64)
+    while !PB.message_done(d)
+        field_number, wire_type = PB.decode_tag(d)
+        if field_number == 1
+            num_tensors = PB.decode(d, Int64)
+        elseif field_number == 2
+            num_qubits = PB.decode(d, Int64)
+        elseif field_number == 3
+            PB.decode!(d, wire_type, physical_dims)
+        elseif field_number == 4
+            max_bond_dim = PB.decode(d, Int64)
+        elseif field_number == 5
+            PB.decode!(d, wire_type, bond_dims)
+        elseif field_number == 7
+            ortho_center = PB.decode(d, Int64)
+        else
+            Base.skip(d, wire_type)
+        end
+    end
+    return MPSLight(num_tensors, num_qubits, physical_dims[], max_bond_dim, bond_dims[], ortho_center)
+end
+
+function PB.encode(e::PB.AbstractProtoEncoder, x::MPSLight)
+    initpos = position(e.io)
+    x.num_tensors != zero(Int64) && PB.encode(e, 1, x.num_tensors)
+    x.num_qubits != zero(Int64) && PB.encode(e, 2, x.num_qubits)
+    !isempty(x.physical_dims) && PB.encode(e, 3, x.physical_dims)
+    x.max_bond_dim != zero(Int64) && PB.encode(e, 4, x.max_bond_dim)
+    !isempty(x.bond_dims) && PB.encode(e, 5, x.bond_dims)
+    x.ortho_center != zero(Int64) && PB.encode(e, 7, x.ortho_center)
+    return position(e.io) - initpos
+end
+function PB._encoded_size(x::MPSLight)
+    encoded_size = 0
+    x.num_tensors != zero(Int64) && (encoded_size += PB._encoded_size(x.num_tensors, 1))
+    x.num_qubits != zero(Int64) && (encoded_size += PB._encoded_size(x.num_qubits, 2))
+    !isempty(x.physical_dims) && (encoded_size += PB._encoded_size(x.physical_dims, 3))
+    x.max_bond_dim != zero(Int64) && (encoded_size += PB._encoded_size(x.max_bond_dim, 4))
+    !isempty(x.bond_dims) && (encoded_size += PB._encoded_size(x.bond_dims, 5))
+    x.ortho_center != zero(Int64) && (encoded_size += PB._encoded_size(x.ortho_center, 7))
+    return encoded_size
+end
 
 struct FlatTensor
     dims::Vector{Int64}
@@ -252,6 +313,72 @@ function PB._encoded_size(x::MPO)
     return encoded_size
 end
 
+struct MPOLight
+    num_tensors::Int64
+    num_qubits::Int64
+    physical_dims::Vector{Int64}
+    max_bond_dim::Int64
+    bond_dims::Vector{Int64}
+    ortho_center::Int64
+    norm::MpoNorm.T
+end
+PB.default_values(::Type{MPOLight}) = (;num_tensors = zero(Int64), num_qubits = zero(Int64), physical_dims = Vector{Int64}(), max_bond_dim = zero(Int64), bond_dims = Vector{Int64}(), ortho_center = zero(Int64), norm = MpoNorm.OPERATOR)
+PB.field_numbers(::Type{MPOLight}) = (;num_tensors = 1, num_qubits = 2, physical_dims = 3, max_bond_dim = 4, bond_dims = 5, ortho_center = 7, norm = 8)
+
+function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:MPOLight})
+    num_tensors = zero(Int64)
+    num_qubits = zero(Int64)
+    physical_dims = PB.BufferedVector{Int64}()
+    max_bond_dim = zero(Int64)
+    bond_dims = PB.BufferedVector{Int64}()
+    ortho_center = zero(Int64)
+    norm = MpoNorm.OPERATOR
+    while !PB.message_done(d)
+        field_number, wire_type = PB.decode_tag(d)
+        if field_number == 1
+            num_tensors = PB.decode(d, Int64)
+        elseif field_number == 2
+            num_qubits = PB.decode(d, Int64)
+        elseif field_number == 3
+            PB.decode!(d, wire_type, physical_dims)
+        elseif field_number == 4
+            max_bond_dim = PB.decode(d, Int64)
+        elseif field_number == 5
+            PB.decode!(d, wire_type, bond_dims)
+        elseif field_number == 7
+            ortho_center = PB.decode(d, Int64)
+        elseif field_number == 8
+            norm = PB.decode(d, MpoNorm.T)
+        else
+            Base.skip(d, wire_type)
+        end
+    end
+    return MPOLight(num_tensors, num_qubits, physical_dims[], max_bond_dim, bond_dims[], ortho_center, norm)
+end
+
+function PB.encode(e::PB.AbstractProtoEncoder, x::MPOLight)
+    initpos = position(e.io)
+    x.num_tensors != zero(Int64) && PB.encode(e, 1, x.num_tensors)
+    x.num_qubits != zero(Int64) && PB.encode(e, 2, x.num_qubits)
+    !isempty(x.physical_dims) && PB.encode(e, 3, x.physical_dims)
+    x.max_bond_dim != zero(Int64) && PB.encode(e, 4, x.max_bond_dim)
+    !isempty(x.bond_dims) && PB.encode(e, 5, x.bond_dims)
+    x.ortho_center != zero(Int64) && PB.encode(e, 7, x.ortho_center)
+    x.norm != MpoNorm.OPERATOR && PB.encode(e, 8, x.norm)
+    return position(e.io) - initpos
+end
+function PB._encoded_size(x::MPOLight)
+    encoded_size = 0
+    x.num_tensors != zero(Int64) && (encoded_size += PB._encoded_size(x.num_tensors, 1))
+    x.num_qubits != zero(Int64) && (encoded_size += PB._encoded_size(x.num_qubits, 2))
+    !isempty(x.physical_dims) && (encoded_size += PB._encoded_size(x.physical_dims, 3))
+    x.max_bond_dim != zero(Int64) && (encoded_size += PB._encoded_size(x.max_bond_dim, 4))
+    !isempty(x.bond_dims) && (encoded_size += PB._encoded_size(x.bond_dims, 5))
+    x.ortho_center != zero(Int64) && (encoded_size += PB._encoded_size(x.ortho_center, 7))
+    x.norm != MpoNorm.OPERATOR && (encoded_size += PB._encoded_size(x.norm, 8))
+    return encoded_size
+end
+
 struct MPSState
     q::Union{Nothing,MPS}
     c::Union{Nothing,ClassicalState}
@@ -295,13 +422,13 @@ function PB._encoded_size(x::MPSState)
 end
 
 struct MpoCircuit
-    mpos::Vector{MPO}
+    mpos::Vector{MPOLight}
 end
-PB.default_values(::Type{MpoCircuit}) = (;mpos = Vector{MPO}())
+PB.default_values(::Type{MpoCircuit}) = (;mpos = Vector{MPOLight}())
 PB.field_numbers(::Type{MpoCircuit}) = (;mpos = 1)
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:MpoCircuit})
-    mpos = PB.BufferedVector{MPO}()
+    mpos = PB.BufferedVector{MPOLight}()
     while !PB.message_done(d)
         field_number, wire_type = PB.decode_tag(d)
         if field_number == 1
