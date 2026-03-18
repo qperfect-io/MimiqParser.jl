@@ -37,6 +37,8 @@ export TensorWeaverLight
 include("state.jl")
 export Tracefile
 export is_trace_active
+export get_state_evolution
+export set_state_evolution
 export StateInfo
 include("tracefile.jl")
 

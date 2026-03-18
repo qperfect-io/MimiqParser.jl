@@ -54,7 +54,7 @@ function PB._encoded_size(x::Pair)
     return encoded_size
 end
 
-@enumx Backend StateVector=0 MatrixProductState=1 TensorWeaver=2
+@enumx Backend StateVector=0 MatrixProductState=1 TensorWeaver=2 Undefined=3
 
 struct StateInfo
     num_qubits::Int64

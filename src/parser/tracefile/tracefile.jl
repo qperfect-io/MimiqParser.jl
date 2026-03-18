@@ -70,17 +70,26 @@ function toproto(state_evo::Vector{StateInfo})
     return states
 end
 
+function toproto(backend::Backend)
+    if backend == MPS
+        return tracefile_pb.Backend.MatrixProductState
+    elseif backend == SV
+        return tracefile_pb.Backend.StateVector
+    elseif backend == TensorWeaver
+        return tracefile_pb.Backend.TensorWeaver
+    end
+
+    return tracefile_pb.Backend.Undefined
+end
+
 function toproto(trace::Tracefile)
     og_circ = toproto(trace.original_circuit)
     opt_circ = toproto(trace.optimized_circuit)
 
     state_evo = toproto(trace.state_evolution)
-    return tracefile_pb.Tracefile(og_circ, opt_circ, state_evo)
+    return tracefile_pb.Tracefile(toproto(trace.backend), og_circ, opt_circ, state_evo)
 end
 
-function fromproto(state_evolution::Vector{tracefile_pb.StateInfo})
-    error("TODO: convert back to a readable format")
-end
 
 function fromproto(trace::tracefile_pb.Tracefile)
     return Tracefile(length(trace.state_evolution) == 0, fromproto(trace.original_circuit), fromproto(trace.optimized_circuit), fromproto(trace.state_evolution))
