@@ -4,60 +4,24 @@
 module qcsresults_pb
 
 
-import ..bitvector_pb
+import ..utils_pb
 import ProtoBuf as PB
 using ProtoBuf: OneOf
 using ProtoBuf.EnumX: @enumx
 
-export ComplexDouble, AmplitudeEntry, ComplexVector, QCSResults
+export AmplitudeEntry, QCSResults
 
-
-struct ComplexDouble
-    real::Float64
-    imag::Float64
-end
-PB.default_values(::Type{ComplexDouble}) = (;real = zero(Float64), imag = zero(Float64))
-PB.field_numbers(::Type{ComplexDouble}) = (;real = 1, imag = 2)
-
-function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:ComplexDouble})
-    real = zero(Float64)
-    imag = zero(Float64)
-    while !PB.message_done(d)
-        field_number, wire_type = PB.decode_tag(d)
-        if field_number == 1
-            real = PB.decode(d, Float64)
-        elseif field_number == 2
-            imag = PB.decode(d, Float64)
-        else
-            Base.skip(d, wire_type)
-        end
-    end
-    return ComplexDouble(real, imag)
-end
-
-function PB.encode(e::PB.AbstractProtoEncoder, x::ComplexDouble)
-    initpos = position(e.io)
-    x.real !== zero(Float64) && PB.encode(e, 1, x.real)
-    x.imag !== zero(Float64) && PB.encode(e, 2, x.imag)
-    return position(e.io) - initpos
-end
-function PB._encoded_size(x::ComplexDouble)
-    encoded_size = 0
-    x.real !== zero(Float64) && (encoded_size += PB._encoded_size(x.real, 1))
-    x.imag !== zero(Float64) && (encoded_size += PB._encoded_size(x.imag, 2))
-    return encoded_size
-end
 
 struct AmplitudeEntry
-    key::Union{Nothing,bitvector_pb.BitVector}
-    val::Union{Nothing,ComplexDouble}
+    key::Union{Nothing,utils_pb.BitVector}
+    val::Union{Nothing,utils_pb.ComplexDouble}
 end
 PB.default_values(::Type{AmplitudeEntry}) = (;key = nothing, val = nothing)
 PB.field_numbers(::Type{AmplitudeEntry}) = (;key = 1, val = 2)
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:AmplitudeEntry})
-    key = Ref{Union{Nothing,bitvector_pb.BitVector}}(nothing)
-    val = Ref{Union{Nothing,ComplexDouble}}(nothing)
+    key = Ref{Union{Nothing,utils_pb.BitVector}}(nothing)
+    val = Ref{Union{Nothing,utils_pb.ComplexDouble}}(nothing)
     while !PB.message_done(d)
         field_number, wire_type = PB.decode_tag(d)
         if field_number == 1
@@ -84,47 +48,17 @@ function PB._encoded_size(x::AmplitudeEntry)
     return encoded_size
 end
 
-struct ComplexVector
-    data::Vector{ComplexDouble}
-end
-PB.default_values(::Type{ComplexVector}) = (;data = Vector{ComplexDouble}())
-PB.field_numbers(::Type{ComplexVector}) = (;data = 1)
-
-function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:ComplexVector})
-    data = PB.BufferedVector{ComplexDouble}()
-    while !PB.message_done(d)
-        field_number, wire_type = PB.decode_tag(d)
-        if field_number == 1
-            PB.decode!(d, data)
-        else
-            Base.skip(d, wire_type)
-        end
-    end
-    return ComplexVector(data[])
-end
-
-function PB.encode(e::PB.AbstractProtoEncoder, x::ComplexVector)
-    initpos = position(e.io)
-    !isempty(x.data) && PB.encode(e, 1, x.data)
-    return position(e.io) - initpos
-end
-function PB._encoded_size(x::ComplexVector)
-    encoded_size = 0
-    !isempty(x.data) && (encoded_size += PB._encoded_size(x.data, 1))
-    return encoded_size
-end
-
 struct QCSResults
     simulator::String
     version::String
     fidelities::Vector{Float64}
     avggateerrors::Vector{Float64}
-    cstates::Vector{bitvector_pb.BitVector}
-    zstates::Vector{ComplexVector}
+    cstates::Vector{utils_pb.BitVector}
+    zstates::Vector{utils_pb.ComplexVector}
     amplitudes::Vector{AmplitudeEntry}
     timings::Dict{String,Float64}
 end
-PB.default_values(::Type{QCSResults}) = (;simulator = "", version = "", fidelities = Vector{Float64}(), avggateerrors = Vector{Float64}(), cstates = Vector{bitvector_pb.BitVector}(), zstates = Vector{ComplexVector}(), amplitudes = Vector{AmplitudeEntry}(), timings = Dict{String,Float64}())
+PB.default_values(::Type{QCSResults}) = (;simulator = "", version = "", fidelities = Vector{Float64}(), avggateerrors = Vector{Float64}(), cstates = Vector{utils_pb.BitVector}(), zstates = Vector{utils_pb.ComplexVector}(), amplitudes = Vector{AmplitudeEntry}(), timings = Dict{String,Float64}())
 PB.field_numbers(::Type{QCSResults}) = (;simulator = 1, version = 2, fidelities = 3, avggateerrors = 4, cstates = 5, zstates = 6, amplitudes = 7, timings = 8)
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:QCSResults})
@@ -132,8 +66,8 @@ function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:QCSResults})
     version = ""
     fidelities = PB.BufferedVector{Float64}()
     avggateerrors = PB.BufferedVector{Float64}()
-    cstates = PB.BufferedVector{bitvector_pb.BitVector}()
-    zstates = PB.BufferedVector{ComplexVector}()
+    cstates = PB.BufferedVector{utils_pb.BitVector}()
+    zstates = PB.BufferedVector{utils_pb.ComplexVector}()
     amplitudes = PB.BufferedVector{AmplitudeEntry}()
     timings = Dict{String,Float64}()
     while !PB.message_done(d)

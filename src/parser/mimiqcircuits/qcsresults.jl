@@ -28,13 +28,6 @@ function toproto(s::QCSResults)
     )
 end
 
-function toproto(v::Vector{ComplexF64})
-    return qcsresults_pb.ComplexVector(toproto.(v))
-end
-
-function toproto(v::ComplexF64)
-    return qcsresults_pb.ComplexDouble(real(v), imag(v))
-end
 
 function toproto(amplitudes::Dict{BitString,ComplexF64})
     return map(collect(amplitudes)) do (k, v)
@@ -55,13 +48,6 @@ function fromproto(s::qcsresults_pb.QCSResults)
     )
 end
 
-function fromproto(v::qcsresults_pb.ComplexVector)
-    return fromproto.(v.data)
-end
-
-function fromproto(v::qcsresults_pb.ComplexDouble)
-    return ComplexF64(v.real, v.imag)
-end
 
 function fromproto(amplitudes::Vector{qcsresults_pb.AmplitudeEntry})
     d = Dict{BitString,ComplexF64}()

@@ -4,7 +4,7 @@
 module circuit_pb
 
 
-import ..bitvector_pb
+import ..utils_pb
 
 import ..pauli_pb
 import ProtoBuf as PB
@@ -185,13 +185,13 @@ function PB._encoded_size(x::Note)
 end
 
 struct Amplitude
-    bs::Union{Nothing,bitvector_pb.BitVector}
+    bs::Union{Nothing,utils_pb.BitVector}
 end
 PB.default_values(::Type{Amplitude}) = (;bs = nothing)
 PB.field_numbers(::Type{Amplitude}) = (;bs = 1)
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:Amplitude})
-    bs = Ref{Union{Nothing,bitvector_pb.BitVector}}(nothing)
+    bs = Ref{Union{Nothing,utils_pb.BitVector}}(nothing)
     while !PB.message_done(d)
         field_number, wire_type = PB.decode_tag(d)
         if field_number == 1
@@ -439,7 +439,7 @@ end
 
 struct var"##Stub#IfStatement"{T1<:var"##Abstract#Operation"} <: var"##Abstract#IfStatement"
     operation::Union{Nothing,T1}
-    bitstring::Union{Nothing,bitvector_pb.BitVector}
+    bitstring::Union{Nothing,utils_pb.BitVector}
 end
 
 struct var"##Stub#Instruction"{T1<:var"##Abstract#Operation"} <: var"##Abstract#Instruction"
@@ -1063,7 +1063,7 @@ PB.field_numbers(::Type{IfStatement}) = (;operation = 1, bitstring = 2)
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:IfStatement})
     operation = Ref{Union{Nothing,Operation}}(nothing)
-    bitstring = Ref{Union{Nothing,bitvector_pb.BitVector}}(nothing)
+    bitstring = Ref{Union{Nothing,utils_pb.BitVector}}(nothing)
     while !PB.message_done(d)
         field_number, wire_type = PB.decode_tag(d)
         if field_number == 1

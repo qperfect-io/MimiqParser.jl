@@ -3,28 +3,27 @@
 
 module mpssim_pb
 
+
+import ..utils_pb
 import ProtoBuf as PB
 using ProtoBuf: OneOf
 using ProtoBuf.EnumX: @enumx
 
-export MPSLight, FlatTensor, ClassicalState, ComplexState, MpoNorm, MPS, MPO, MPOLight
-export MPSState, MpoCircuit
+export MPSLight, FlatTensor, MpoNorm, MPS, MPO, MPOLight, MPSState, MpoCircuit
 
 
 struct MPSLight
     num_tensors::Int64
-    num_qubits::Int64
     physical_dims::Vector{Int64}
     max_bond_dim::Int64
     bond_dims::Vector{Int64}
     ortho_center::Int64
 end
-PB.default_values(::Type{MPSLight}) = (;num_tensors = zero(Int64), num_qubits = zero(Int64), physical_dims = Vector{Int64}(), max_bond_dim = zero(Int64), bond_dims = Vector{Int64}(), ortho_center = zero(Int64))
-PB.field_numbers(::Type{MPSLight}) = (;num_tensors = 1, num_qubits = 2, physical_dims = 3, max_bond_dim = 4, bond_dims = 5, ortho_center = 7)
+PB.default_values(::Type{MPSLight}) = (;num_tensors = zero(Int64), physical_dims = Vector{Int64}(), max_bond_dim = zero(Int64), bond_dims = Vector{Int64}(), ortho_center = zero(Int64))
+PB.field_numbers(::Type{MPSLight}) = (;num_tensors = 1, physical_dims = 2, max_bond_dim = 3, bond_dims = 4, ortho_center = 5)
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:MPSLight})
     num_tensors = zero(Int64)
-    num_qubits = zero(Int64)
     physical_dims = PB.BufferedVector{Int64}()
     max_bond_dim = zero(Int64)
     bond_dims = PB.BufferedVector{Int64}()
@@ -34,40 +33,36 @@ function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:MPSLight})
         if field_number == 1
             num_tensors = PB.decode(d, Int64)
         elseif field_number == 2
-            num_qubits = PB.decode(d, Int64)
-        elseif field_number == 3
             PB.decode!(d, wire_type, physical_dims)
-        elseif field_number == 4
+        elseif field_number == 3
             max_bond_dim = PB.decode(d, Int64)
-        elseif field_number == 5
+        elseif field_number == 4
             PB.decode!(d, wire_type, bond_dims)
-        elseif field_number == 7
+        elseif field_number == 5
             ortho_center = PB.decode(d, Int64)
         else
             Base.skip(d, wire_type)
         end
     end
-    return MPSLight(num_tensors, num_qubits, physical_dims[], max_bond_dim, bond_dims[], ortho_center)
+    return MPSLight(num_tensors, physical_dims[], max_bond_dim, bond_dims[], ortho_center)
 end
 
 function PB.encode(e::PB.AbstractProtoEncoder, x::MPSLight)
     initpos = position(e.io)
     x.num_tensors != zero(Int64) && PB.encode(e, 1, x.num_tensors)
-    x.num_qubits != zero(Int64) && PB.encode(e, 2, x.num_qubits)
-    !isempty(x.physical_dims) && PB.encode(e, 3, x.physical_dims)
-    x.max_bond_dim != zero(Int64) && PB.encode(e, 4, x.max_bond_dim)
-    !isempty(x.bond_dims) && PB.encode(e, 5, x.bond_dims)
-    x.ortho_center != zero(Int64) && PB.encode(e, 7, x.ortho_center)
+    !isempty(x.physical_dims) && PB.encode(e, 2, x.physical_dims)
+    x.max_bond_dim != zero(Int64) && PB.encode(e, 3, x.max_bond_dim)
+    !isempty(x.bond_dims) && PB.encode(e, 4, x.bond_dims)
+    x.ortho_center != zero(Int64) && PB.encode(e, 5, x.ortho_center)
     return position(e.io) - initpos
 end
 function PB._encoded_size(x::MPSLight)
     encoded_size = 0
     x.num_tensors != zero(Int64) && (encoded_size += PB._encoded_size(x.num_tensors, 1))
-    x.num_qubits != zero(Int64) && (encoded_size += PB._encoded_size(x.num_qubits, 2))
-    !isempty(x.physical_dims) && (encoded_size += PB._encoded_size(x.physical_dims, 3))
-    x.max_bond_dim != zero(Int64) && (encoded_size += PB._encoded_size(x.max_bond_dim, 4))
-    !isempty(x.bond_dims) && (encoded_size += PB._encoded_size(x.bond_dims, 5))
-    x.ortho_center != zero(Int64) && (encoded_size += PB._encoded_size(x.ortho_center, 7))
+    !isempty(x.physical_dims) && (encoded_size += PB._encoded_size(x.physical_dims, 2))
+    x.max_bond_dim != zero(Int64) && (encoded_size += PB._encoded_size(x.max_bond_dim, 3))
+    !isempty(x.bond_dims) && (encoded_size += PB._encoded_size(x.bond_dims, 4))
+    x.ortho_center != zero(Int64) && (encoded_size += PB._encoded_size(x.ortho_center, 5))
     return encoded_size
 end
 
@@ -110,66 +105,6 @@ function PB._encoded_size(x::FlatTensor)
     !isempty(x.dims) && (encoded_size += PB._encoded_size(x.dims, 1))
     x.is_complex != false && (encoded_size += PB._encoded_size(x.is_complex, 2))
     !isempty(x.data) && (encoded_size += PB._encoded_size(x.data, 3))
-    return encoded_size
-end
-
-struct ClassicalState
-    bits::Vector{Bool}
-end
-PB.default_values(::Type{ClassicalState}) = (;bits = Vector{Bool}())
-PB.field_numbers(::Type{ClassicalState}) = (;bits = 1)
-
-function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:ClassicalState})
-    bits = PB.BufferedVector{Bool}()
-    while !PB.message_done(d)
-        field_number, wire_type = PB.decode_tag(d)
-        if field_number == 1
-            PB.decode!(d, wire_type, bits)
-        else
-            Base.skip(d, wire_type)
-        end
-    end
-    return ClassicalState(bits[])
-end
-
-function PB.encode(e::PB.AbstractProtoEncoder, x::ClassicalState)
-    initpos = position(e.io)
-    !isempty(x.bits) && PB.encode(e, 1, x.bits)
-    return position(e.io) - initpos
-end
-function PB._encoded_size(x::ClassicalState)
-    encoded_size = 0
-    !isempty(x.bits) && (encoded_size += PB._encoded_size(x.bits, 1))
-    return encoded_size
-end
-
-struct ComplexState
-    values::Vector{Float64}
-end
-PB.default_values(::Type{ComplexState}) = (;values = Vector{Float64}())
-PB.field_numbers(::Type{ComplexState}) = (;values = 1)
-
-function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:ComplexState})
-    values = PB.BufferedVector{Float64}()
-    while !PB.message_done(d)
-        field_number, wire_type = PB.decode_tag(d)
-        if field_number == 1
-            PB.decode!(d, wire_type, values)
-        else
-            Base.skip(d, wire_type)
-        end
-    end
-    return ComplexState(values[])
-end
-
-function PB.encode(e::PB.AbstractProtoEncoder, x::ComplexState)
-    initpos = position(e.io)
-    !isempty(x.values) && PB.encode(e, 1, x.values)
-    return position(e.io) - initpos
-end
-function PB._encoded_size(x::ComplexState)
-    encoded_size = 0
-    !isempty(x.values) && (encoded_size += PB._encoded_size(x.values, 1))
     return encoded_size
 end
 
@@ -381,16 +316,16 @@ end
 
 struct MPSState
     q::Union{Nothing,MPS}
-    c::Union{Nothing,ClassicalState}
-    z::Union{Nothing,ComplexState}
+    c::Union{Nothing,utils_pb.BitVector}
+    z::Union{Nothing,utils_pb.ComplexVector}
 end
 PB.default_values(::Type{MPSState}) = (;q = nothing, c = nothing, z = nothing)
 PB.field_numbers(::Type{MPSState}) = (;q = 1, c = 2, z = 3)
 
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:MPSState})
     q = Ref{Union{Nothing,MPS}}(nothing)
-    c = Ref{Union{Nothing,ClassicalState}}(nothing)
-    z = Ref{Union{Nothing,ComplexState}}(nothing)
+    c = Ref{Union{Nothing,utils_pb.BitVector}}(nothing)
+    z = Ref{Union{Nothing,utils_pb.ComplexVector}}(nothing)
     while !PB.message_done(d)
         field_number, wire_type = PB.decode_tag(d)
         if field_number == 1

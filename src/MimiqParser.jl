@@ -8,7 +8,7 @@ using MimiqCircuitsBase
 
 # The generated files should be built manually before compiling
 # When doing a merge request the files will be automatically regenerated using src/compile_pb_to_julia.jl before being tested
-include("julia/bitvector_pb.jl")
+include("julia/utils_pb.jl")
 include("julia/pauli_pb.jl")
 include("julia/hamiltonian_pb.jl")
 include("julia/circuit_pb.jl")
@@ -16,7 +16,7 @@ include("julia/qcsresults_pb.jl")
 include("julia/optim_pb.jl")
 include("julia/noisemodel_pb.jl")
 
-include("parser/mimiqcircuits/bitstring.jl")
+include("parser/utils/utils.jl")
 include("parser/mimiqcircuits/pauli.jl")
 include("parser/mimiqcircuits/hamiltonian.jl")
 include("parser/mimiqcircuits/circuit.jl")

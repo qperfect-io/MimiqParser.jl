@@ -1,6 +1,5 @@
 #
-# Copyright © 2022-2024 University of Strasbourg. All Rights Reserved.
-# Copyright © 2023-2025 QPerfect. All Rights Reserved.
+# Copyright © 2023-2026 QPerfect. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,13 +15,29 @@
 #
 
 function toproto(bv::BitVector)
-    return bitvector_pb.BitVector(length(bv), bitarr_to_bytes(bv))
+    return utils_pb.BitVector(length(bv), bitarr_to_bytes(bv))
 end
 
-function fromproto(bv::bitvector_pb.BitVector)
+function fromproto(bv::utils_pb.BitVector)
     return BitString(bytes_to_bitarr(bv.data, bv.len))
 end
 
 function toproto(bv::BitString)
     return toproto(bv.bits)
+end
+
+function fromproto(v::utils_pb.ComplexVector)
+    return fromproto.(v.data)
+end
+
+function fromproto(v::utils_pb.ComplexDouble)
+    return ComplexF64(v.real, v.imag)
+end
+
+function toproto(v::Vector{ComplexF64})
+    return utils_pb.ComplexVector(toproto.(v))
+end
+
+function toproto(v::ComplexF64)
+    return utils_pb.ComplexDouble(real(v), imag(v))
 end

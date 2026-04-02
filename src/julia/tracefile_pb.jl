@@ -4,6 +4,8 @@
 module tracefile_pb
 
 
+import ..utils_pb
+
 import ..statevecsim_pb
 
 import ..mpssim_pb
@@ -59,8 +61,8 @@ end
 struct StateInfo
     num_qubits::Int64
     state::Union{Nothing,OneOf{<:Union{statevecsim_pb.StateVectorLight,mpssim_pb.MPSLight,tensorweaver_pb.TensorWeaverLight}}}
-    c::Union{Nothing,mpssim_pb.ClassicalState}
-    z::Union{Nothing,mpssim_pb.ComplexState}
+    c::Union{Nothing,utils_pb.BitVector}
+    z::Union{Nothing,utils_pb.ComplexVector}
 end
 PB.oneof_field_types(::Type{StateInfo}) = (;
     state = (;sv=statevecsim_pb.StateVectorLight, mps=mpssim_pb.MPSLight, tensorweaver=tensorweaver_pb.TensorWeaverLight),
@@ -71,8 +73,8 @@ PB.field_numbers(::Type{StateInfo}) = (;num_qubits = 1, sv = 2, mps = 3, tensorw
 function PB.decode(d::PB.AbstractProtoDecoder, ::Type{<:StateInfo})
     num_qubits = zero(Int64)
     state = nothing
-    c = Ref{Union{Nothing,mpssim_pb.ClassicalState}}(nothing)
-    z = Ref{Union{Nothing,mpssim_pb.ComplexState}}(nothing)
+    c = Ref{Union{Nothing,utils_pb.BitVector}}(nothing)
+    z = Ref{Union{Nothing,utils_pb.ComplexVector}}(nothing)
     while !PB.message_done(d)
         field_number, wire_type = PB.decode_tag(d)
         if field_number == 1
